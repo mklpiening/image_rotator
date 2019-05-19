@@ -7,9 +7,12 @@ import cv2
 import math
 
 ap = argparse.ArgumentParser()
-ap.add_argument("-i", "--image", required=True,
+ap.add_argument("-i", "--input", required=True,
     help="path to input image")
+ap.add_argument("-o", "--output", required=True,
+    help="path to output image")
 args = vars(ap.parse_args())
+
 
 def draw_facial_landmarks(coords):
     # chib
@@ -127,8 +130,8 @@ def rotate(v, angle):
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
 
-original = cv2.imread(args['image'])
-original = imutils.resize(original, width=1000)
+original = cv2.imread(args['input'])
+original = imutils.resize(original, width=500)
 
 faces_angle = 0
 amount_faces = 0
@@ -151,10 +154,6 @@ for rotation in np.arange(0, 2 * math.pi, math.pi / 4):
         mouth = get_mouth_position(coords)
         left_labial_angle, right_labial_angle = get_labial_angle(coords)
 
-        cv2.line(image, nose, mouth, (255, 255, 255), 2)
-        cv2.line(image, left_labial_angle, right_labial_angle, (255, 255, 255), 2)
-        cv2.line(image, left_eye, right_eye, (255, 255, 255), 2)
-
         ang = (angle(rotate((1, 0), rotation), np.subtract(np.array(right_eye), np.array(left_eye)))
                 + angle(rotate((1, 0), rotation), np.subtract(np.array(right_labial_angle), np.array(left_labial_angle)))
                 + angle(rotate((0, 1), rotation), np.subtract(np.array(mouth), np.array(nose)))) / 3
@@ -163,24 +162,13 @@ for rotation in np.arange(0, 2 * math.pi, math.pi / 4):
             faces_angle += ang
             amount_faces += 1
 
-    cv2.imshow('image', image)
-    cv2.waitKey(1)
-
 image_angle = 0
 if amount_faces > 0:
     image_angle = faces_angle / amount_faces
 if image_angle < 0:
     image_angle += 2 * math.pi
 
-image = original
-
-print(image_angle * 180 / math.pi)
-
-print()
-print(180 / 4, '-', 3 * 180 / 4)
-print(3 * 180 / 4, '-', 5 * 180 / 4)
-print(5 * 180 / 4, '-', 7 * 180 / 4)
-print()
+image = cv2.imread(args['input'])
 
 if image_angle > math.pi / 4 and image_angle <= 3 * math.pi / 4:
     print('rotate 270°')
@@ -194,7 +182,4 @@ elif image_angle > 5 * math.pi / 4 and image_angle <= 7 * math.pi / 4:
 else:
     print('correct orientation')
 
-print(angle((1, 0), (1, 1)), angle((1, 0), (1, -1)))
-
-cv2.imshow('image', image)
-cv2.waitKey(0)
+cv2.imwrite(args['output'], image)
